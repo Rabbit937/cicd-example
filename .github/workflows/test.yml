@@ -1,15 +1,62 @@
-name: "Test"
+name: Test Python Application
 
 on:
-    push:
-        branches:
-            - main
-    pull_request:
-        branches:
-            - main
-        types : [opened]
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
-        container: astral/uv:python3.12 
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.10, 3.11, 3.12]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies with uv
+      run: |
+        uv sync --dev
+
+    - name: Run tests
+      run: |
+        uv run pytest
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies with uv
+      run: |
+        uv sync --dev
+
+    - name: Run linter (ruff)
+      run: |
+        uv run ruff check .
+
+    - name: Check code formatting with black
+      run: |
+        uv run black --check .
